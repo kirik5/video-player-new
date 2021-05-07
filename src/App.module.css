@@ -1,0 +1,124 @@
+.playerBackground {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: black;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.player_container {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  background-color: black;
+}
+
+.player {
+  display: block;
+  position: relative;
+  overflow: hidden;
+  width: 100vw;
+  max-height: 100vh;
+}
+
+.player_controls {
+  display: block;
+  position: absolute;
+  left: 0px;
+  width: 100vw;
+  height: 50px;
+  bottom: 0px;
+  background-color: rgba(250, 235, 215, 0.25);
+  padding-top: 30px;
+  transition: transform 0.2s
+}
+
+.progress_bar {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 50%;
+  height: 100%;
+  background-color: coral;
+
+}
+
+.progress_bar--grey {
+  width: 95%;
+  margin: 0 auto;
+  position: relative;
+  background-color: gray;
+  height: 5px;
+}
+
+.toggler {
+  display: block;
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: coral;
+  border-radius: 50%;
+  box-shadow: 0px 0px 20px 0px rgba(34, 60, 80, 0.9);
+  transform: translateY(calc(-50% + 2px)) translateX(-50%);
+  cursor: pointer;
+}
+
+.controls--hide {
+  transform: translateY(100%)
+}
+
+.pause {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  width: 100px;
+  border-radius: 50%;
+  background-color: rgba(250, 235, 215, 0.25);
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) scale(0, 0);
+  transition: all 0.2s;
+}
+
+.pause_show {
+  transform: translate(-50%, -50%) scale(1, 1);
+}
+
+.horizontal_line {
+  width: 10px;
+  height: 50px;
+  background-color: coral;
+  /* box-shadow: 0px 0px 20px 0px rgba(34, 60, 80, 0.9); */
+}
+
+.horizontal_line:first-of-type {
+  margin-right: 15px;
+}
+
+.volume_container {
+  position: absolute;
+  left: 25px;
+  top: 25px;
+  width: 15px;
+  height: 100px;
+  background-color: grey;
+  transition: all 0.2s;
+}
+
+.volume_container--hide {
+  left: -15px;
+}
+
+.volume_progress {
+  position: absolute;
+  left: 0px;
+  bottom: 0px;
+  width: 100%;
+  background-color: coral;
+  height: 50%;
+}

@@ -1,25 +1,14 @@
-import logo from './logo.svg';
-import './App.css';
+import VideoPlayer from './video-player/video-player';
+
 
 function App() {
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+    <VideoPlayer
+      videoLink={"http://peach.themazzone.com/durian/movies/sintel-1024-surround.mp4"}
+      posterLink={"https://htmlacademy-react-2.appspot.com/wtw/static/film/poster/Shutter_Island.jpg"}
+    />
+  )
 }
 
 export default App;
