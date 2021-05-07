@@ -23,6 +23,7 @@ const VideoPlayer = ({videoLink, posterLink}) => {
     const pause = useRef() // реф на значок с паузой
     const volume = useRef() // реф для индикатора громкости
     const volumeContainer = useRef() // реф для контейнера индикатора громкости
+    const clickToPlay = useRef() // реф для надписи запуска видео
   
     
     // ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ НАЧАЛО
@@ -63,20 +64,32 @@ const VideoPlayer = ({videoLink, posterLink}) => {
     
     // После загрузки видео воспроизводим его
     useEffect(() => {
-      const vd = video.current
-      const canPlayHandler = () => {
-        setPlayMode(true)
-        setShowControlsMode(true)
-        vd.removeEventListener('canplaythrough', canPlayHandler)
-        planingHideControlsPanels() // Планируем скрыть панели управления видео и громкостью
-        // vd.muted = false
-        // Ставим громкость на половину
-        vd.volume = 0.5
-        const vl = volume.current
-        vl.style.height = `${vd.volume * 100}%`
-      }
-      vd.addEventListener('canplaythrough', canPlayHandler)
-      return () => vd.removeEventListener('canplaythrough', canPlayHandler)
+        const vd = video.current
+        const canPlayHandler = () => {
+            const ctp = clickToPlay.current
+            ctp.classList.add(`${styles["clickToPlay--show"]}`)
+
+            const startToPlay = () => {
+                vd.removeEventListener('click', startToPlay)
+                ctp.removeEventListener('click', startToPlay)
+                setPlayMode(true)
+                setShowControlsMode(true)
+                vd.removeEventListener('canplaythrough', canPlayHandler)
+                planingHideControlsPanels() // Планируем скрыть панели управления видео и громкостью
+                vd.muted = false
+                // Ставим громкость на половину
+                vd.volume = 0.5
+                const vl = volume.current
+                vl.style.height = `${vd.volume * 100}%`
+                ctp.classList.remove(`${styles["clickToPlay--show"]}`)
+            }
+            vd.addEventListener('click', startToPlay)
+            ctp.addEventListener('click', startToPlay)
+
+            
+        }
+        vd.addEventListener('canplaythrough', canPlayHandler)
+        return () => vd.removeEventListener('canplaythrough', canPlayHandler)
     }, [])
   
   
@@ -431,7 +444,7 @@ const VideoPlayer = ({videoLink, posterLink}) => {
 
                 {
                     isShowingControls &&
-                    (
+                    (<>
                         <div
                             className={styles.player_controls}
                             ref={controlsPanel}
@@ -450,7 +463,16 @@ const VideoPlayer = ({videoLink, posterLink}) => {
                                 ></div>
                             </div>
                         </div>
-                    )
+                        <div
+                            className={styles.volume_container}
+                            ref={volumeContainer}
+                        >
+                            <div
+                                className={styles.volume_progress}
+                                ref={volume}
+                            ></div>
+                        </div>
+                    </>)
                 }
 
                 <div
@@ -461,26 +483,12 @@ const VideoPlayer = ({videoLink, posterLink}) => {
                     <div className={styles.horizontal_line}></div>
                 </div>
 
-                {
-                    isShowingControls &&
-                    (
-                        <div
-                            className={styles.volume_container}
-                            ref={volumeContainer}
-                        >
-                            <div
-                                className={styles.volume_progress}
-                                ref={volume}
-                            ></div>
-                        </div>
-                    )
-                    
-
-                }
-                
+                <div
+                    className={styles.clickToPlay}
+                    ref={clickToPlay}
+                >Click to PLAY</div>
             </div>
         </div>
-    
     )
 }
 

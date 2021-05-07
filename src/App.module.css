@@ -122,3 +122,20 @@
   background-color: coral;
   height: 50%;
 }
+
+.clickToPlay {
+  position: absolute;
+  font-size: 50px;
+  color: coral;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  padding: 25px;
+  background-color: rgba(250, 235, 215, 0.25);
+  cursor: pointer;
+}
+
+.clickToPlay--show {
+  display: block;
+}
