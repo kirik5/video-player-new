@@ -175,7 +175,7 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
         const cut = currTime.current // Указатель на 
         
         let isPlayingLocal // Играет ли плеер
-        let canMouseDown = true // Можно ли делать следующее перетаскивание ползунка видео (можно ли делать перемотку)
+        let canMouseDown = true // Можно ли делать следующее перетаскивание ползунка видео (можно ли делать перемотку) (догрузилось ли видео)
         let didMove = false // Показывает, было ли перетаскивание ползунка видео (показывает также, происходит ли перетаскивание ползунка видео сейчас)
         let onControls // Курсор находится над панелью управления видео
         
@@ -204,6 +204,7 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
         const videoClickHandler = () => {
             if (!isShowingControls) return // Если нет панели управления видео - то и клик по видео не работает
             if (didMove) return // Если при перетаскивании нажмер "Space" - стоп/плей не сработает
+            if (!canMouseDown) return // Если видео подгрузилось - мы не можем нажать на паузу!
             isPlayingLocal = !vd.paused // Записываем в переменную воспроизводится ли видео (true) или нет (false)
             if (isPlayingLocal) { // Если видео воспроизводится
                 removeHideControlsPanel = true // Записываем true в переменную отмены планирования скрытия панели управления видео
