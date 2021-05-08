@@ -9,7 +9,7 @@ let timerId = null // Aйдишник таймера, который досту�
 let removeHideControlsPanel = false // Отмена всех действий по скрытию панели управления видео
 
 
-const VideoPlayer = ({videoLink, posterLink}) => {
+const VideoPlayer = ({videoLink, posterLink, filmName}) => {
     
     const [isPlaying, setPlayMode] = useState(false) // Воспроизводится или нет
     const [isShowingControls, setShowControlsMode] = useState(false) // Показываются или нет панели управления видео и громкостью
@@ -138,10 +138,12 @@ const VideoPlayer = ({videoLink, posterLink}) => {
     useEffect(() => {
         const vd = video.current 
         const stopingVideoHandler = () => {
+            const ps = pause.current
             setPlayMode(false)
             removeHideControlsPanel = true // Записываем true в переменную отмены планирования скрытия панели управления видео
             clearTimer() // Если есть запланированный таймер - очищаем его
             showControlsPanels() // Показываем панели управления видео и громкостью
+            ps.classList.add(`${styles.pause_show}`) // Показываем кнопку паузы
         }
         vd.addEventListener('ended', stopingVideoHandler)
         return () => vd.removeEventListener('ended', stopingVideoHandler)
@@ -499,6 +501,9 @@ const VideoPlayer = ({videoLink, posterLink}) => {
                                 >
                                     01:39:45
                                 </span>
+                                <span
+                                    className={styles.film_name}
+                                >{filmName}</span>
                             </div>
                         </div>
                         <div
