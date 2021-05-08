@@ -84,18 +84,11 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
             vl.style.height = `${vd.volume * 100}%`
             ctp.classList.remove(`${styles["clickToPlay--show"]}`)
         }
-
-
         const canPlayHandler = () => {
-            
             ctp.classList.add(`${styles["clickToPlay--show"]}`)
-
-            
             vd.addEventListener('click', startToPlay)
             ctp.addEventListener('click', startToPlay)
-            document.addEventListener('keydown', startToPlay)
-
-            
+            document.addEventListener('keydown', startToPlay) 
         }
         vd.addEventListener('canplaythrough', canPlayHandler)
         return () => {
