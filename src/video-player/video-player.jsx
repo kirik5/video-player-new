@@ -68,32 +68,41 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
     // После загрузки видео воспроизводим его
     useEffect(() => {
         const vd = video.current
+        const ctp = clickToPlay.current
+        const startToPlay = () => {
+            vd.removeEventListener('click', startToPlay)
+            ctp.removeEventListener('click', startToPlay)
+            document.removeEventListener('keydown', startToPlay)
+            setPlayMode(true)
+            setShowControlsMode(true)
+            vd.removeEventListener('canplaythrough', canPlayHandler)
+            planingHideControlsPanels() // Планируем скрыть панели управления видео и громкостью
+            vd.muted = false
+            // Ставим громкость на половину
+            vd.volume = 0.5
+            const vl = volume.current
+            vl.style.height = `${vd.volume * 100}%`
+            ctp.classList.remove(`${styles["clickToPlay--show"]}`)
+        }
+
+
         const canPlayHandler = () => {
-            const ctp = clickToPlay.current
+            
             ctp.classList.add(`${styles["clickToPlay--show"]}`)
 
-            const startToPlay = () => {
-                vd.removeEventListener('click', startToPlay)
-                ctp.removeEventListener('click', startToPlay)
-                setPlayMode(true)
-                setShowControlsMode(true)
-                vd.removeEventListener('canplaythrough', canPlayHandler)
-                planingHideControlsPanels() // Планируем скрыть панели управления видео и громкостью
-                vd.muted = false
-                // Ставим громкость на половину
-                vd.volume = 0.5
-                const vl = volume.current
-                vl.style.height = `${vd.volume * 100}%`
-                ctp.classList.remove(`${styles["clickToPlay--show"]}`)
-            }
+            
             vd.addEventListener('click', startToPlay)
             ctp.addEventListener('click', startToPlay)
+            document.addEventListener('keydown', startToPlay)
 
             
         }
         vd.addEventListener('canplaythrough', canPlayHandler)
         return () => {
             vd.removeEventListener('canplaythrough', canPlayHandler)
+            vd.removeEventListener('click', startToPlay)
+            ctp.removeEventListener('click', startToPlay)
+            document.removeEventListener('keydown', startToPlay)
             if (timerId) clearTimer(timerId)
         }
     }, [])
@@ -169,6 +178,8 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
         const pgct = progressContainer.current // Указатель на контейнер для индикатора прогресса
         const vl = volume.current // Указатель на индикатор громкости
         const vc = volumeContainer.current // Указатель на контейнер с индикатором громкости
+        const pg = progress.current // Указатель на прогресс-бар
+        const cut = currTime.current // Указатель на 
         
         let isPlayingLocal // Играет ли плеер
         let canMouseDown = true // Можно ли делать следующее перетаскивание ползунка видео (можно ли делать перемотку)
@@ -229,8 +240,8 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
             planingHideControlsPanels() // Планируем скрыть все панели
         }
         
-        // Реагируем на нажатие пробела и стрелов "Вверх/Вниз"
-        const pressSpaceHandler = (evt) => {
+        // Реагируем на нажатие пробела и стрелок "Вверх/Вниз/Вправо/Влево"
+        const pressKeyHandler = (evt) => {
             if (evt.code === 'Space') {
                 videoClickHandler()
             } else {
@@ -246,10 +257,33 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
                         vl.style.height = `${vd.volume * 100}%`
                     }
                     showVolumeLevel() // Показываем панель регулировки звука и планируем ее скрыть
-                }  
+                } else if (evt.code === 'ArrowLeft') {
+                    if (didMove) return
+                    clearTimer() // Отменяем таймер
+                    showControlsPanels() // Показываем панели управления
+                    const currTime = vd.currentTime - 5 < 0 ? 0 : vd.currentTime - 5
+                    vd.currentTime = currTime // Обновляем текущее время видео
+                    cut.innerHTML = `${getHours(vd.currentTime)}:${getMinutes(vd.currentTime)}:${getSeconds(vd.currentTime)}`
+                    const pos = vd.currentTime / vd.duration * 100
+                    updateTogglerPosition(tg, pg, pos) // Обновляем позицию ползунка видео
+                    if (vd.paused) return // Отменяем скрытие панели управления видео, если перематываем стрелками, а видео стоит на паузе
+                    planingHideControlsPanels() // Планируем скрытие панелей управления видео и громкостью
+
+                } else if (evt.code === 'ArrowRight') {
+                    if (didMove) return
+                    clearTimer() // Отменяем таймер
+                    showControlsPanels() // Показываем панели управления
+                    const currTime = vd.currentTime + 5 > vd.duration ? vd.duration : vd.currentTime + 5
+                    vd.currentTime = currTime // Обновляем текущее время видео
+                    cut.innerHTML = `${getHours(vd.currentTime)}:${getMinutes(vd.currentTime)}:${getSeconds(vd.currentTime)}`
+                    const pos = vd.currentTime / vd.duration * 100
+                    updateTogglerPosition(tg, pg, pos) // Обновляем позицию ползунка видео
+                    if (vd.paused) return // Отменяем скрытие панели управления видео, если перематываем стрелками, а видео стоит на паузе
+                    planingHideControlsPanels() // Планируем скрытие панелей управления видео и громкостью
+                }
             }
         }
-        document.addEventListener('keydown', pressSpaceHandler)
+        document.addEventListener('keydown', pressKeyHandler)
 
 
         // При вращении колесика мыши добавляем/убираем громкость
@@ -275,7 +309,6 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
         // По щелчку на индикаторе громкости меняем громкость
         const changeClickVolumeHandler = (evt) => {
             let y = evt.clientY - getOffsetTop(volumeContainer)
-            console.log(y)
             if (y >= 95) {
                 vd.volume = 0
                 vl.style.height = `${vd.volume * 100}%`
@@ -330,20 +363,21 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
         vc.addEventListener('mouseleave', leaveControlsHanlder)
 
 
-        // Меняем положение ползунка видео на прогрессбаре
+        // Меняем положение ползунка видео на прогрессбаре и текущее время проигрывания видео
         const changePositionToggler = (evt) => {
+            const clientX = evt.clientX
             const tg = toggler.current
             const pg = progress.current
             const vd = video.current
             const offsetLeft = getOffsetLeft(progressContainer)
             const offsetWidth = getOffsetWidth(progressContainer)
             let x
-            if (evt.clientX < offsetLeft) {
+            if (clientX < offsetLeft) {
                 x = 0
-            } else if (evt.clientX > offsetLeft + offsetWidth) {
+            } else if (clientX > offsetLeft + offsetWidth) {
                 x = offsetWidth
             } else {
-                x = evt.clientX - offsetLeft
+                x = clientX - offsetLeft
             }
             const pos = x * vd.duration / offsetWidth / vd.duration * 100
             updateTogglerPosition(tg, pg, pos) // Обновляем позицию ползунка видео
@@ -400,7 +434,7 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
             cp.removeEventListener('mouseenter', enterControlsHanlder)
             cp.removeEventListener('mouseleave', leaveControlsHanlder)
             pgct.removeEventListener('click', clickProgressHandler)
-            document.removeEventListener('keydown', pressSpaceHandler)
+            document.removeEventListener('keydown', pressKeyHandler)
             ct.removeEventListener('mousewheel', changeVolumeHandler)
             ct.removeEventListener('click', changeClickVolumeHandler)
             vc.removeEventListener('mouseenter', enterControlsHanlder)
