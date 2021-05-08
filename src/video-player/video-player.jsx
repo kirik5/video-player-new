@@ -1,7 +1,8 @@
 import React from 'react'
 import { useEffect, useState, useRef } from 'react'
-import styles from '../App.module.css'
+import styles from './video-player.module.css'
 import { getOffsetLeft, getOffsetWidth, getOffsetTop } from './offset-left-width'
+import { getHours, getMinutes, getSeconds } from './get-time'
 
 
 let timerId = null // Aйдишник таймера, который доступен для всех useEffect`ов
@@ -24,6 +25,8 @@ const VideoPlayer = ({videoLink, posterLink}) => {
     const volume = useRef() // реф для индикатора громкости
     const volumeContainer = useRef() // реф для контейнера индикатора громкости
     const clickToPlay = useRef() // реф для надписи запуска видео
+    const currTime = useRef() // реф для надписи текущего времени
+    const allTime = useRef() // реф для надписи всего времени
   
     
     // ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ НАЧАЛО
@@ -89,7 +92,10 @@ const VideoPlayer = ({videoLink, posterLink}) => {
             
         }
         vd.addEventListener('canplaythrough', canPlayHandler)
-        return () => vd.removeEventListener('canplaythrough', canPlayHandler)
+        return () => {
+            vd.removeEventListener('canplaythrough', canPlayHandler)
+            if (timerId) clearTimer(timerId)
+        }
     }, [])
   
   
@@ -399,6 +405,7 @@ const VideoPlayer = ({videoLink, posterLink}) => {
             vc.removeEventListener('mouseleave', enterControlsHanlder)
             vc.removeEventListener('click', changeClickVolumeHandler)
             ps.removeEventListener('click', videoClickHandler)
+            if (timerId) clearTimer(timerId)
         }
     }, [isShowingControls])
   
@@ -420,6 +427,23 @@ const VideoPlayer = ({videoLink, posterLink}) => {
 
         return () => ct.removeEventListener('dblclick', fullScreenHandler)
     }, [])
+
+
+    // Отображаем все время фильма и текущее время на шкале
+    useEffect(() => {
+        if (!isShowingControls) return // Если не появилась панель управления видео отменяем какие-либо действия
+        const alt = allTime.current
+        const vd = video.current
+        let time
+        time = vd.duration
+        alt.innerHTML = `${getHours(time)}:${getMinutes(time)}:${getSeconds(time)}`
+        const cut = currTime.current
+        const getCurrentTime = () => {
+            cut.innerHTML = `${getHours(vd.currentTime)}:${getMinutes(vd.currentTime)}:${getSeconds(vd.currentTime)}`
+        }
+        vd.addEventListener('timeupdate', getCurrentTime)
+        return () => vd.removeEventListener('timeupdate', getCurrentTime)
+    }, [isShowingControls])
 
 
     return (
@@ -461,6 +485,20 @@ const VideoPlayer = ({videoLink, posterLink}) => {
                                     className={styles.toggler}
                                     ref={toggler}
                                 ></div>
+                            </div>
+                            <div className={styles.time}>
+                                <span
+                                    className={styles.current_time}
+                                    ref={currTime}
+                                >
+                                    00:00:01
+                                </span>/
+                                <span
+                                    className={styles.all_time}
+                                    ref={allTime}
+                                >
+                                    01:39:45
+                                </span>
                             </div>
                         </div>
                         <div
