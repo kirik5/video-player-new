@@ -443,13 +443,25 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
     useEffect(() => {
         const bg = background.current
         const ct = container.current
+        
         const fullScreenHandler = () => {
-            if (bg.requestFullScreen) {
-                bg.requestFullScreen()
-            } else if(bg.mozRequestFullScreen) {
-                bg.mozRequestFullScreen()
-            } else if(bg.webkitRequestFullScreen) {
-                bg.webkitRequestFullScreen()
+            if (!document.fullscreenElement) {
+                if (bg.requestFullScreen) {
+                    bg.requestFullScreen()
+                } else if(bg.mozRequestFullScreen) {
+                    bg.mozRequestFullScreen()
+                } else if(bg.webkitRequestFullScreen) {
+                    bg.webkitRequestFullScreen()
+                } 
+                
+            } else {
+                if (document.cancelFullScreen) {
+                    document.cancelFullScreen()
+                } else if(document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen()
+                } else if(document.webkitCancelFullScreen) {
+                    document.webkitCancelFullScreen()
+                }
             }
         }
         ct.addEventListener('dblclick', fullScreenHandler)
