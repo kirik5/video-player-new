@@ -1,6 +1,5 @@
 // Берем отступ слева от прогрессбара до края страницы
-export const getOffsetLeft = (containerElementRef) => {
-    const containerElement = containerElementRef.current
+export const getOffsetLeft = (containerElement) => {
     let offsetLeft = 0
     let container = containerElement
     while (container) {
@@ -11,8 +10,8 @@ export const getOffsetLeft = (containerElementRef) => {
 }
 
 // Берем отступ сверху от прогрессбара до края страницы
-export const getOffsetTop = (containerElementRef) => {
-    const containerElement = containerElementRef.current
+export const getOffsetTop = (containerElement) => {
+
     let offsetTop = 0
     let container = containerElement
     while (container) {
@@ -23,13 +22,11 @@ export const getOffsetTop = (containerElementRef) => {
 }
 
 // Берем ширину прогрессбара
-export const getOffsetWidth = (togglerElementRef) => {
-    const togglerElement = togglerElementRef.current
+export const getOffsetWidth = (togglerElement) => {
     return togglerElement.offsetWidth
 }
 
 // Берем высоту прогрессбара
-export const getOffsetHeight = (togglerElementRef) => {
-    const togglerElement = togglerElementRef.current
+export const getOffsetHeight = (togglerElement) => {
     return togglerElement.offsetHeight
 }
