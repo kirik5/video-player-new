@@ -168,3 +168,18 @@
   color: coral;
   font-weight: 400;
 }
+
+.loader{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgba(0, 0, 0, 0.7);
+  padding: 10px;
+  display: block;
+  z-index: -1;
+}
+
+.loader--show {
+  z-index: 100;
+}
