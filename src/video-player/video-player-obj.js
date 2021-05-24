@@ -54,7 +54,6 @@ class VideoPlayerObj {
     }
 
     // ПОДГОТОВКА К ВОСПРОИЗВЕДЕНИЮ видео НАЧАЛО
-
     // Показываем начальную надпись "ClickToPlay", когда видео готово
     _showClickToPlayLabelHandler = () => {
         this._video.elem.removeEventListener('canplaythrough', this._showClickToPlayLabelHandler) // Отписываемся от прослушивания первой готовности видео к воспроизведению
@@ -94,7 +93,6 @@ class VideoPlayerObj {
 
 
     // ОТОБРАЖАЕМ ВРЕМЯ видео (текущее и общее) во время воспроизведения НАЧАЛО
-
     // Вычисляем новую позицию прогресс-бара и ползунка видео при воспроизведении видео
     _calculateNewPositionPointerProgress = () => {
         const currentTime = this._video.elem.currentTime
@@ -118,6 +116,7 @@ class VideoPlayerObj {
         this._showTimesHandler()
     }
     // ОТОБРАЖАЕМ ВРЕМЯ видео (текущее и общее) во время воспроизведения КОНЕЦ
+
 
 
     // ПЕРЕМОТКА ВИДЕО НАЧАЛО
@@ -150,12 +149,13 @@ class VideoPlayerObj {
             this._videoProgress.changePosition(newPosition.persent)
             this._video.changeCurrentVideoTime(newPosition.currentTime)
             this._showTimesHandler() // При перетаскивании ползунка видео меняем и текущее время, отображаемое на панели управления видео
+
         }
         // Функция завершения перетаскивания ползунка видео
         const mouseUp = () => {
             document.removeEventListener('mousemove', moveVideoPointer) // Отписываемся от событий
             document.removeEventListener('mouseup', mouseUp) // Отписываемся от событий
-            if (!this._video.pause) this._loader.show()
+            if (!this._loader.isShowing) this._loader.show() // После окончания перетаскивания ползунка видео (если лоадер не отображался) отображаем лоадер
             this._videoPointer.clickOnVideoPointer = false // Показываем, что закончили клин на ползунке видено
             if (this._video.pause) return // Если видео стоит на паузе - дальнейший код не выполняем
             if (!this._video.canPlay) return // Если видео не готово к воспроизведению - дальнейший код не выполняем
@@ -166,13 +166,13 @@ class VideoPlayerObj {
         this._videoPointer.clickOnVideoPointer = true // Показываем, что кликнули на ползунке видео и перешли в режим возможного перетаскивания ползунка (и не нужно обрабатывать клик на видео-прогресс-баре)
         if (this._video.playing) {
             this._video.stop()
-            console.log('stop')
         }
     }
 
     // Запускается, когда видео готово к долгосрочному воспроизведению (событие "canplaythrough")
     _canplaythrough = () => {
         console.log('canplaythrough')
+        if (this._loader.isShowing) this._loader.hide() // После готовности видео к воспроизведению прячем лоадер (если он уже не спрятался до того...)
         if (!this._video.canPlay) this._video.canPlay = true // Показываем, что видео может быть воспроизведено
         if (this._video.pause) return // Не запускаем видео после перетаскивания, так как оно стоит на паузе
         if (this._videoPointer.clickOnVideoPointer) return // Дальнейший код выполнится только тогда, когда пользователь не находится в состоянии нажатого ползунка видео
@@ -188,13 +188,13 @@ class VideoPlayerObj {
         if (!((this._videoPointer.clickOnVideoPointer) || (this._videoProgress.clickOnVideoProgress))) return // Дальнейший код выполнится только тогда, когда пользователь нажал и не отпустил (или нажал и перетаскивает) ползунок видео или же пользователь нажал и не отпустил на видео-прогресс-баре
         if (!this._video.waiting) return // Дальнейший код выполнится только тогда, когда была приостановка видео по причине недокачки
         this._video.stop() // Останавливаем видео, когда оно находится в процесе перетаскивания ползунка (или в режиме нажатой кнопки мыши на видео-прогресс-баре), но уже частично готовго воспроизводится!
-        console.log('stop')
     }
 
     // Остановка видео и перемотка в то место, куда кликнул пользователь по видео-прогресс-бару
     _mousedownOnProgressBarToRewindVideoHandler = (evt) => {
         if (this._videoPointer.clickOnVideoPointer) return // Если нажат ползунок видео - клик по видео-прогресс-бару не обрабатываем!!!
         if (this._videoPointer.moveArrows) return // При перемотке видео стрелками клавиатуры (влево/вправо) перемотка кликом не будет работать!!!
+        document.addEventListener('mouseup', this._mouseupOnProgressBarToRewindVideoHandler) // Подписываемся на прослушивание события отпускания кнопки мыши (mouseup) на всем документе на случай, если пользователь переместит нажатую кнопку мыши и уйдет из progress-видео-бара
         this._videoProgress.clickOnVideoProgress = true // Показываем, что кликнули на ползунке видео и перешли в режим возможного перетаскивания ползунка (и не нужно обрабатывать клик на видео-прогресс-баре)
         const newPosition = this._calculateNewPositionPointerProgressOnDrag(evt.clientX)
         this._videoPointer.changePosition(newPosition.persent)
@@ -202,7 +202,6 @@ class VideoPlayerObj {
         this._video.canPlay = false
         if (this._video.playing) {
             this._video.stop()
-            console.log('stop')
         }
         this._video.elem.currentTime = newPosition.currentTime
     }
@@ -212,7 +211,9 @@ class VideoPlayerObj {
         if (!this._videoProgress.clickOnVideoProgress) return // Если нажали мышкой на видео-прогресс-баре во время перемотки стрелками, а отпустили после перемотки стрелками - такой "mouseup" не должен обрабатываться!!!
         if (this._videoPointer.clickOnVideoPointer) return // Если нажат ползунок видео - клик по видео-прогресс-бару не обрабатываем!!!
         if (this._videoPointer.moveArrows) return // При перемотке видео стрелками клавиатуры (влево/вправо) перемотка кликом не будет работать!!!
+        document.removeEventListener('mouseup', this._mouseupOnProgressBarToRewindVideoHandler) // Отписываемся от прослушивания события отпускания кнопки мыши (mouseup) на всем документе
         this._videoProgress.clickOnVideoProgress = false // Показываем, что закончили клик на ползунке видено
+        if (!this._loader.isShowing) this._loader.show() // Показываем лоадер после перемотки видео методом тыка курсором на произвольном месте прогресс-видео-бара
         if (this._video.pause) return // Не запускаем видео после перетаскивания, так как оно стоит на паузе
         if (!this._video.canPlay) return // Если видео не готово к воспроизведению - даже не проверяем, нужно ли его запустить
         if (!this._video.pause) {
@@ -275,6 +276,7 @@ class VideoPlayerObj {
         if (this._videoPointer.clickOnVideoPointer) return // Если нажат ползунок видео - клик по видео-прогресс-бару не обрабатываем!!!
         if (this._videoProgress.clickOnVideoProgress) return // Если нажат видео-прогресс-бар - клавиши стрелки не должны работать!!!
         this._videoPointer.moveArrows = false
+        if (!this._loader.isShowing) this._loader.show() // Отображаем лоадер после перемотки видео стрелками на клавиатуре
         if (this._video.pause) return // Не запускаем видео после перетаскивания, так как оно стоит на паузе
         if (!this._video.canPlay) return // Если видео не готово к воспроизведению - даже не проверяем, нужно ли его запустить
         this._video.play() // Если видео было запущено до начала перетаскивания ползунка видео - воспроизводим его
@@ -283,8 +285,8 @@ class VideoPlayerObj {
     // ПЕРЕМОТКА ВИДЕО КОНЕЦ
 
 
-    // ПАУЗА/СТАРТ НАЧАЛО
 
+    // ПАУЗА/СТАРТ НАЧАЛО
     // Функция запускающая/ставящая на паузу воспроизведение видео
     _playPauseVideo = () => {
         if (this._video.waiting) return // Если видео в ожидании подгрузки - пауза не нажимается
@@ -312,44 +314,8 @@ class VideoPlayerObj {
     // ПАУЗА/СТАРТ КОНЕЦ
 
 
-    // Отменяем запланированное предыдущее скрытие и планируем новое скрытие панелей управления видео
-    _planingToHideControlsAndVolumeHandler = () => {
-        if (!this._controls.isVisible) this._controls.show()
-        if (!this._volume.isVisible) this._volume.show()
-        if (this._timerId) { // Очищаем таймер предыдущего запуска планирования скрытия панелей
-            clearTimeout(this._timerId)
-            this._timerId = null
-        } // Отменяем предыдущее скрытие панелей управления
-        if (this._inControls) return // Если курсор мыши размещяется над панелями управления - не планируем скрытие этих панелей
-        if (this._video.pause) return // Если видео стоит на паузе - не планируем скрывать панели управления видео и звуком
-        if (this._videoPointer.moving) return // Если перетаскиваем ползунок видео - панели не скрываем
-        this._timerId = setTimeout(() => { // Если курсор мыши не пребывает над панелями управления - планируем скрытие этих панелей
-            this._volume.hide()
-            this._controls.hide()
-        }, this._timeout)
-    }
 
-    // Отменяем запланированное предыдущее скрытие и планируем новое скрытие панели управления звуком
-    _planingToHideVolumeHandler = () => {
-        if (!this._volume.isVisible) this._volume.show()
-        if (this._timerId) { // Очищаем таймер предыдущего запуска планирования скрытия панелей
-            clearTimeout(this._timerId)
-            this._timerId = null
-        } // Отменяем предыдущее скрытие панелей управления
-        if (this._inControls) return // Если курсор мыши размещяется над панелями управления - не планируем скрытие этих панелей
-        if (this._video.pause) return // Если видео стоит на паузе - не планируем скрывать панели управления видео и звуком
-        if (this._videoPointer.moving) return // Если перетаскиваем ползунок видео - панели не скрываем
-        this._timerId = setTimeout(() => { // Если курсор мыши не пребывает над панелями управления - планируем скрытие этих панелей
-            this._volume.hide()
-            if (this._controls.isVisible) this._controls.hide()
-        }, this._timeout)
-    }
-
-
-
-
-
-
+    // ЗВУК НАЧАЛО
     // При вращении колесика мыши добавляем/убираем громкость
     _changeVolumeScrollHandler = (evt) => {
         let delta = evt.deltaY || evt.detail || evt.wheelDelta
@@ -416,6 +382,56 @@ class VideoPlayerObj {
             this._volume.elem.progress.style.height = `${this._video.elem.volume * 100}%`
         }
     }
+    // ЗВУК КОНЕЦ
+
+
+
+    // ПОКАЗ/СКРЫТИЕ ПАНЕЛЕЙ УПРАВЛЕНИЯ видео НАЧАЛО
+    // Отменяем запланированное предыдущее скрытие и планируем новое скрытие панелей управления видео
+    _planingToHideControlsAndVolumeHandler = () => {
+        if (!this._controls.isVisible) this._controls.show()
+        if (!this._volume.isVisible) this._volume.show()
+        if (this._timerId) { // Очищаем таймер предыдущего запуска планирования скрытия панелей
+            clearTimeout(this._timerId)
+            this._timerId = null
+        } // Отменяем предыдущее скрытие панелей управления
+        if (this._inControls) return // Если курсор мыши размещяется над панелями управления - не планируем скрытие этих панелей
+        if (this._video.pause) return // Если видео стоит на паузе - не планируем скрывать панели управления видео и звуком
+        if (this._videoPointer.moving) return // Если перетаскиваем ползунок видео - панели не скрываем
+        this._timerId = setTimeout(() => { // Если курсор мыши не пребывает над панелями управления - планируем скрытие этих панелей
+            this._volume.hide()
+            this._controls.hide()
+        }, this._timeout)
+    }
+
+    // Отменяем запланированное предыдущее скрытие и планируем новое скрытие панели управления звуком
+    _planingToHideVolumeHandler = () => {
+        if (!this._volume.isVisible) this._volume.show()
+        if (this._timerId) { // Очищаем таймер предыдущего запуска планирования скрытия панелей
+            clearTimeout(this._timerId)
+            this._timerId = null
+        } // Отменяем предыдущее скрытие панелей управления
+        if (this._inControls) return // Если курсор мыши размещяется над панелями управления - не планируем скрытие этих панелей
+        if (this._video.pause) return // Если видео стоит на паузе - не планируем скрывать панели управления видео и звуком
+        if (this._videoPointer.moving) return // Если перетаскиваем ползунок видео - панели не скрываем
+        this._timerId = setTimeout(() => { // Если курсор мыши не пребывает над панелями управления - планируем скрытие этих панелей
+            this._volume.hide()
+            if (this._controls.isVisible) this._controls.hide()
+        }, this._timeout)
+    }
+
+    // При попадании указателя мыши на панели управления видео индикатор _inControls переходит в состояние true
+    _mouseEnterToControlsHandler = () => {
+        this._inControls = true
+    }
+
+    // При попадании указателя мыши на панели управления видео индикатор _inControls переходит в состояние true
+    _mouseLeaveToControlsHandler = () => {
+        this._inControls = false
+    }
+    // ПОКАЗ/СКРЫТИЕ ПАНЕЛЕЙ УПРАВЛЕНИЯ видео КОНЕЦ
+
+
 
     // Перевод плеера в полноэкранный режим/выход из полноэкранного режима
     _fullScreenModeHandler = () => {
@@ -442,85 +458,94 @@ class VideoPlayerObj {
 
     // НАЧАЛЬНЫЕ УСТАНОВКИ И ПОДПИСКИ НА СОБЫТИЯ ПЛЕЕРА ПЕРЕД НАЧАЛОМ ВОСПРОИЗВЕДЕНИЯ
     _initialPlayer = () => {
+        // Подписки для воспроизведения/перемотки видео
         this._video.elem.addEventListener('timeupdate', this._updateVideoTime) // Подписываемся на обновление времени
         this._videoPointer.elem.addEventListener('mousedown', this._startDragVideoPointer) // Подписываемся на начало перетаскивания ползунка видео
         this._video.elem.addEventListener('canplaythrough', this._canplaythrough) // Подписываемся на событие готовности к долгосрочному воспроизведению видео
-        this._video.elem.addEventListener('ended', this._changeVideoPlayingStatus) // Подписываемся на событие завершения воспроизведения видео (меняем статус воспроизведения видео)
         document.addEventListener('keydown', this._pressedSpaceKeyHandler) // Подписываемся на нажатие пробела для паузы/воспроизведения
         this._video.elem.addEventListener('click', this._playPauseVideo) // Подписываемся на прослушивание события клика для паузы/воспроизведения
         this._pause.elem.addEventListener('click', this._playPauseVideo) // Подписываемся на прослушивание события клика на кнопке паузы для паузы/воспроизведения
         document.addEventListener('keydown', this._pressedArrowsLeftRightKeyDownHandler) // Подписываемся на прослушивание события нажатия срелок влево/вправо для перемотки воспроизведения видео
         document.addEventListener('keyup', this._pressedArrowsLeftRightKeyUpHandler) // Подписываемся на прослушивание события отпускания клавишей стрелов влево/вправо для запуска воспроизведения видео
         this._videoProgress.elem.container.addEventListener('mousedown', this._mousedownOnProgressBarToRewindVideoHandler) // Подписываемся на прослушивание события нажатие кнопки мыши (mousedown) для перемотки видео до кликнутого состояния
-        this._videoProgress.elem.container.addEventListener('mouseup', this._mouseupOnProgressBarToRewindVideoHandler) // Подписываемся на прослушивание события отпускания кнопки мыши (mouseup) для завершения перемотки видео до кликнутого состояния
-
-
-        this._videoContainer.elem.addEventListener('mousewheel', this._changeVolumeScrollHandler)
-        document.addEventListener('keydown', this._changeVolumeArrowsHandler)
-        this._volume.elem.container.addEventListener('click', this._changeVolumeClickHandler)
-        this._videoBackground.elem.addEventListener('dblclick', this._fullScreenModeHandler)
-        this._controls.elem.addEventListener('mouseenter', this._mouseEnterToControlsHandler)
-        this._volume.elem.container.addEventListener('mouseenter', this._mouseEnterToControlsHandler)
-        this._controls.elem.addEventListener('mouseleave', this._mouseLeaveToControlsHandler)
-        this._volume.elem.container.addEventListener('mouseleave', this._mouseLeaveToControlsHandler)
-        this._videoContainer.elem.addEventListener('mousemove', this._planingToHideControlsAndVolumeHandler)
-        this._video.elem.addEventListener('waiting', this._loader.show)
-        this._video.elem.addEventListener('playing', this._loader.hide)
-        this._video.elem.addEventListener('canplay', this._canplayHandler) // Добавляем обработчик ...
+        this._videoContainer.elem.addEventListener('mousewheel', this._changeVolumeScrollHandler) // Подписываемся на прослушивание события вращения колесика мыши для изменения громкости видео
+        document.addEventListener('keydown', this._changeVolumeArrowsHandler) // Подписываемся на прослушивание события нажатия стрелок вверх/вниз для изменения уровня громкости видео
+        this._volume.elem.container.addEventListener('click', this._changeVolumeClickHandler) // Подписываемся на прослушивание события клика на индикаторе громкости для изменения громкости
+        this._video.elem.addEventListener('canplay', this._canplayHandler) // Добавляем обработчик останова видео поготовности, если начинаем изменять позицию воспроизведения видео из состояния waiting (по достижению состояния canplay нужно останавливать видео, так как обычная остановка видео из состояния waiting не работает!!!)
+        // Подписки для скрытия панелей управления
+        this._controls.elem.addEventListener('mouseenter', this._mouseEnterToControlsHandler) // Подписываемся на прослушивание события помещения мыши над панелью управления видео
+        this._volume.elem.container.addEventListener('mouseenter', this._mouseEnterToControlsHandler) // Подписываемся на прослушивание события помещения мыши над панелью управления звуком
+        this._controls.elem.addEventListener('mouseleave', this._mouseLeaveToControlsHandler) // Подписываемся на прослушивание события выхода из пребывания курсора мыши над панелью управления видео
+        this._volume.elem.container.addEventListener('mouseleave', this._mouseLeaveToControlsHandler) // Подписываемся на прослушивание события выхода из пребывания курсора мыши над панелью управления звуком
+        this._videoContainer.elem.addEventListener('mousemove', this._planingToHideControlsAndVolumeHandler) // Подписываемся на прослушивание события перемещения мыши для отмены старого планирования скрытия панелей управления видео и планирования нового скрытия панелей управления видео
+        // Подписки на отображения лоадера
+        this._video.elem.addEventListener('waiting', this._loader.show) // Подписываемся на прослушивание события waiting для показа лоадера!
+        this._video.elem.addEventListener('playing', this._loader.hide) // Подписываемся на прослушивание события playing для того, чтобы спрятать лоадер!
+        // Полноэкранный режим
+        this._videoBackground.elem.addEventListener('dblclick', this._fullScreenModeHandler) // Подписываемся на прослушивание события двойного клика для перехода/выхода в полноэкранный режим
     }
 
-    // Функция, меняющая статус воспроизведения видео (используется при окончании воспроизведения видео)
-    _changeVideoPlayingStatus = () => {
-        this._video.elem.playing = false
-    }
 
-    // При попадании указателя мыши на панели управления видео индикатор _inControls переходит в состояние true
-    _mouseEnterToControlsHandler = () => {
-        this._inControls = true
-    }
-
-    // При попадании указателя мыши на панели управления видео индикатор _inControls переходит в состояние true
-    _mouseLeaveToControlsHandler = () => {
-        this._inControls = false
-    }
 
     // Удаляем все обработчики, навешанные видеоплеером!
     removeEventListeners = () => {
+        // Отписка от начальных обработчиков для подготовки видео к воспроизведению
         this._video.elem.removeEventListener('canplaythrough', this._showClickToPlayLabelHandler) // Отписываемся от прослушивания события готовности воспроизведения видео для отрисовки кнопки воспроизведения вдиое по клику
         this._video.elem.removeEventListener('click', this._clickToPlayLabelHandler) // Отписываемся от прослушивания события клика по видео для начала воспроизведения видео
         this._clickToPlayLabel.elem.removeEventListener('click', this._clickToPlayLabelHandler) // Отписываемся от прослушивания события клика по надписи для начала воспроизведения видео
         document.removeEventListener('keydown', this._pressSpaceToPlayLabelHandler) // Отписываемся от прослушивания события нажатия клавиши Space для начала воспроизведения видео
-
+        // Отписки для воспроизведения/перемотки видео
         this._video.elem.removeEventListener('timeupdate', this._updateVideoTime) // Отписываемся от прослушивания события обновления времени воспроизведения видео
         this._videoPointer.elem.removeEventListener('mousedown', this._startDragVideoPointer) // Отписываемся от просшуливания события начала перетаскивания ползунка видео
         this._videoPointer.elem.ondragstart = null // возвращаем стандартное поведение при стандартном Drag and Drop
         this._video.elem.removeEventListener('canplaythrough', this._canplaythrough) // Отписываемся от прослушивания события готовности долгосрочного воспроизведения видео
-        this._video.elem.removeEventListener('ended', this._changeVideoPlayingStatus) // Одписываемся от события завершения воспроизведения видео (меняем статус воспроизведения видео)
+        this._video.elem.removeEventListener('ended', this._video._changeVideoPlayingStatus) // Одписываемся от события завершения воспроизведения видео (меняем статус воспроизведения видео)
         document.removeEventListener('keydown', this._pressedSpaceKeyHandler) // Одписываемся от нажатие пробела для паузы/воспроизведения
         this._video.elem.removeEventListener('click', this._playPauseVideo) // Отписываемся от прослушивание события клика для паузы/воспроизведения
         this._pause.elem.removeEventListener('click', this._playPauseVideo) // Отписываемся от прослушивание события клика на кнопке паузы для паузы/воспроизведения
         document.removeEventListener('keydown', this._pressedArrowsLeftRightKeyDownHandler) // Отписываемся от прослушивания события нажатия срелок влево/вправо для перемотки воспроизведения видео
         document.removeEventListener('keyup', this._pressedArrowsLeftRightKeyUpHandler) // Отписываемся от прослушивания события "отжатия" стрелок влево/вправо для запуска воспроизведения видео
-        this._videoProgress.elem.container.removeEventListener('mousedown', this._mousedownOnProgressBarToRewindVideoHandler)
-        this._videoProgress.elem.container.removeEventListener('mouseup', this._mouseupOnProgressBarToRewindVideoHandler)
+        this._videoProgress.elem.container.removeEventListener('mousedown', this._mousedownOnProgressBarToRewindVideoHandler) // Отписываемся от прослушивания события нажатие кнопки мыши (mousedown) для перемотки видео до кликнутого состояния
+        document.removeEventListener('mouseup', this._mouseupOnProgressBarToRewindVideoHandler) // Отписываемся от прослушивания события отпускания кнопки мыши (mouseup) на всем документе
+        this._videoContainer.elem.removeEventListener('mousewheel', this._changeVolumeScrollHandler) // Отписываемся от прослушивание события вращения колесика мыши для изменения громкости видео
+        document.removeEventListener('keydown', this._changeVolumeArrowsHandler) // Отписываемся от прослушивания события нажатия стрелок вверх/вниз для изменения уровня громкости видео
+        this._volume.elem.container.removeEventListener('click', this._changeVolumeClickHandler) // Отписываемся от прослушивание события клика на индикаторе громкости для изменения громкости
+        this._video.elem.removeEventListener('canplay', this._canplayHandler) // Удаляем обработчик останова видео поготовности, если начинаем изменять позицию воспроизведения видео из состояния waiting (по достижению состояния canplay нужно останавливать видео, так как обычная остановка видео из состояния waiting не работает!!!)
+        // Отписки для скрытия панелей управления
+        this._controls.elem.removeEventListener('mouseenter', this._mouseEnterToControlsHandler) // Отписываемся от прослушивания события помещения мыши над панелью управления видео
+        this._volume.elem.container.removeEventListener('mouseenter', this._mouseEnterToControlsHandler) // Отписываемся от прослушивания события помещения мыши над панелью управления звуком
+        this._controls.elem.removeEventListener('mouseleave', this._mouseLeaveToControlsHandler) // Отписываемся от прослушивания события выхода из пребывания курсора мыши над панелью управления видео
+        this._volume.elem.container.removeEventListener('mouseleave', this._mouseLeaveToControlsHandler) // Отписываемся от прослушивания события выхода из пребывания курсора мыши над панелью управления звуком
+        this._videoContainer.elem.removeEventListener('mousemove', this._planingToHideControlsAndVolumeHandler) // Отписываемся от прослушивания события перемещения мыши для отмены старого планирования скрытия панелей управления видео и планирования нового скрытия панелей управления видео
+        // Отписки для простоя и лоадера
+        this._video.elem.removeEventListener('playing', this._video.playingHandler) // Отписываемся от прослушивания события playing, чтобы менять соответствующие маркеры состояния (waiting, playing, canPlay)
+        this._video.elem.removeEventListener('waiting', this._video.waitingHandler) // Отписываемся от прослушивания события playing, чтобы менять соответствующие маркеры состояния (waiting, playing)
+        this._video.elem.removeEventListener('waiting', this._loader.show) // Отписываемся от прослушивания события waiting для показа лоадера!
+        this._video.elem.removeEventListener('playing', this._loader.hide) // Отписываемся от прослушивания события playing для того, чтобы спрятать лоадер!
+        // Полноэкранный режим
+        this._videoBackground.elem.removeEventListener('dblclick', this._fullScreenModeHandler) // Отписываемся на прослушивание события двойного клика для перехода/выхода в полноэкранный режим
+    }
 
-
-        this._videoContainer.elem.removeEventListener('mousewheel', this._changeVolumeScrollHandler)
-        document.removeEventListener('keydown', this._changeVolumeArrowsHandler)
-        this._volume.elem.container.removeEventListener('click', this._changeVolumeClickHandler)
-        this._videoBackground.elem.removeEventListener('dblclick', this._fullScreenModeHandler)
-        this._controls.elem.removeEventListener('mouseenter', this._mouseEnterToControlsHandler)
-        this._volume.elem.container.removeEventListener('mouseenter', this._mouseEnterToControlsHandler)
-        this._controls.elem.removeEventListener('mouseleave', this._mouseLeaveToControlsHandler)
-        this._volume.elem.container.removeEventListener('mouseleave', this._mouseLeaveToControlsHandler)
-        this._videoContainer.elem.removeEventListener('mousemove', this._planingToHideControlsAndVolumeHandler)
-        this._video.elem.removeEventListener('waiting', this._loader.show)
-        this._video.elem.removeEventListener('playing', this._loader.hide)
-        this._video.elem.removeEventListener('canplay', this._canplayHandler)
+    // Метод, позволяющий смотреть значения маркеров режимов видеоплеера
+    showMarkers = () => {
+        setInterval(() => {
+            console.clear()
+            console.log('canPlay = ', this._video.canPlay)
+            console.log('waiting = ', this._video.waiting)
+            console.log('playing = ', this._video.playing)
+            console.log('pause = ', this._video.pause)
+            console.log('inControls = ', this._inControls)
+            console.log('volume isVisible = ', this._volume.isVisible)
+            console.log('controls isVisible = ', this._controls.isVisible)
+            console.log('moveArrows = ', this._videoPointer.moveArrows)
+            console.log('clickOnVideoPointer = ', this._videoPointer.clickOnVideoPointer)
+            console.log('clickOnVideoProgress = ', this._videoProgress.clickOnVideoProgress)
+        }, 500)
     }
 }
 
 export default VideoPlayerObj
+
 
 
 class ClickToPlayLabel {
@@ -543,17 +568,18 @@ class Video {
         this.playing = false // Воспроизводится ли видео (этот маркер изменяется даже тогда, когда видео останавливает/запускает не пользователь!!!)
         this.pause = false // Показывает, было ли видео поставлено на паузу пользователем
         this.elem = video
-        this.elem.addEventListener('playing', this._playing)
-        this.elem.addEventListener('waiting', this._waiting)
+        this.elem.addEventListener('playing', this.playingHandler)
+        this.elem.addEventListener('waiting', this.waitingHandler)
+        this.elem.addEventListener('ended', this._changeVideoPlayingStatus) // Подписываемся на событие завершения воспроизведения видео (меняем статус воспроизведения видео)
     }
-    _playing = () => {
+    playingHandler = () => { // При каждом начале воспроизведения ставлю маркер canPlay в true; waiting в false; playing в true, если видео начинает воспроизводится либо командой play, либо
         console.log('playing')
-        if (!this.canPlay) this.canPlay = true // При перемотке видео ползунком из состояния waiting нужно, когда видео начинает воспроизводится, поставить маркер canPlay в значение true (иначе не будет работать пауза/запуск)
+        this.canPlay = true // При перемотке видео ползунком из состояния waiting нужно, когда видео начинает воспроизводится, поставить маркер canPlay в значение true (иначе не будет работать пауза/запуск)
         this.waiting = false
-        if (!this.playing) return // При перемотке из состояния waiting (когда при canplay ставим видео на паузу) наступает событие playing, но так как видео на паузе - ставим маркер playing = false
+        if (this.elem.paused) return // При перемотке из состояния waiting (когда при canplay ставим видео на паузу) наступает событие playing, но так как видео на паузе - НЕ ставим маркер playing = true
         this.playing = true
     }
-    _waiting = () => {
+    waitingHandler = () => { // При каждой задержке при докачке изменяем маркеры playing и waiting
         this.playing = false
         this.waiting = true
         console.log('waiting')
@@ -577,7 +603,10 @@ class Video {
     }
     changeCurrentVideoTime = (newTime) => {
         this.elem.currentTime = newTime
-        // this.currentTime = this.elem.currentTime
+    }
+    // Функция, меняющая статус воспроизведения видео (используется при окончании воспроизведения видео)
+    _changeVideoPlayingStatus = () => {
+        this.elem.playing = false
     }
 }
 
@@ -679,15 +708,19 @@ class VideoBackground {
     }
 }
 
+// Объект лоадера, который показывается, когда видео загружается, либо находится в состоянии waiting!
 class Loader {
     constructor({elem, styles}) {
         this.elem = elem
         this._styles = styles
+        this.isShowing = false
     }
     show = () => {
         this.elem.classList.add(`${this._styles["loader--show"]}`)
+        this.isShowing = true
     }
     hide = () => {
         this.elem.classList.remove(`${this._styles["loader--show"]}`)
+        this.isShowing = false
     }
 }

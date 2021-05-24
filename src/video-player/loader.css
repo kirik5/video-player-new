@@ -1,5 +1,6 @@
 .lds-roller {
-    display: inline-block;
+    display: block;
+    box-sizing: border-box;
     position: relative;
     width: 80px;
     height: 80px;

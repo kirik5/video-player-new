@@ -44,6 +44,8 @@ const VideoPlayer = ({videoLink, posterLink, filmName}) => {
             styles: styles,
         })
 
+        // videoPlayer.showMarkers() // Запускаем отображение маркеров видео-плеера
+
         return () => {
             videoPlayer.removeEventListeners()
         }
